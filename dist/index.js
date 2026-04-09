@@ -36188,6 +36188,42 @@ function callAsyncFunction(args, source) {
     return fn(...Object.values(args));
 }
 
+;// CONCATENATED MODULE: ./src/create-configured-getoctokit.ts
+function stripUndefined(obj) {
+    const result = {};
+    for (const [key, value] of Object.entries(obj)) {
+        if (value !== undefined) {
+            ;
+            result[key] = value;
+        }
+    }
+    return result;
+}
+function createConfiguredGetOctokit(rawGetOctokit, defaultOptions, ...defaultPlugins) {
+    return (token, options, ...additionalPlugins) => {
+        const userOpts = stripUndefined(options || {});
+        const defaultRequest = defaultOptions.request;
+        const userRequestRaw = userOpts.request;
+        const userRequest = userRequestRaw ? stripUndefined(userRequestRaw) : {};
+        const defaultRetry = defaultOptions.retry;
+        const userRetryRaw = userOpts.retry;
+        const userRetry = userRetryRaw ? stripUndefined(userRetryRaw) : {};
+        const merged = {
+            ...defaultOptions,
+            ...userOpts,
+            request: { ...(defaultRequest || {}), ...userRequest },
+            retry: { ...(defaultRetry || {}), ...userRetry }
+        };
+        const allPlugins = [...defaultPlugins];
+        for (const plugin of additionalPlugins) {
+            if (!allPlugins.includes(plugin)) {
+                allPlugins.push(plugin);
+            }
+        }
+        return rawGetOctokit(token, merged, ...allPlugins);
+    };
+}
+
 ;// CONCATENATED MODULE: ./src/retry-options.ts
 
 function getRetryOptions(retries, exemptStatusCodes, defaultOptions) {
@@ -36256,6 +36292,7 @@ const wrapRequire = new Proxy(require, {
 
 
 
+
 process.on('unhandledRejection', handleError);
 main().catch(handleError);
 async function main() {
@@ -36283,12 +36320,14 @@ async function main() {
     }
     const github = (0,lib_github.getOctokit)(token, opts, plugin_retry_dist_node.retry, dist_node.requestLog);
     const script = core.getInput('script', { required: true });
+    const configuredGetOctokit = createConfiguredGetOctokit(lib_github.getOctokit, opts, plugin_retry_dist_node.retry, dist_node.requestLog);
     // Using property/value shorthand on `require` (e.g. `{require}`) causes compilation errors.
     const result = await callAsyncFunction({
         require: wrapRequire,
         __original_require__: require,
         github,
         octokit: github,
+        getOctokit: configuredGetOctokit,
         context: lib_github.context,
         core: core,
         exec: exec,

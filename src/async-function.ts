@@ -2,6 +2,7 @@ import * as core from '@actions/core'
 import * as exec from '@actions/exec'
 import {Context} from '@actions/github/lib/context'
 import {GitHub} from '@actions/github/lib/utils'
+import {getOctokit} from '@actions/github'
 import * as glob from '@actions/glob'
 import * as io from '@actions/io'
 
@@ -12,6 +13,7 @@ export declare type AsyncFunctionArguments = {
   core: typeof core
   github: InstanceType<typeof GitHub>
   octokit: InstanceType<typeof GitHub>
+  getOctokit: typeof getOctokit
   exec: typeof exec
   glob: typeof glob
   io: typeof io
